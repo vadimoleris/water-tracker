@@ -1,0 +1,558 @@
+<!--
+  Водичка — простой трекер выпитой воды
+  SPDX-License-Identifier: MIT
+  Copyright (c) <2026> <vadimoleris>
+-->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#4fc3f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Водичка">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<title>💧 Водичка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #0d3b5e;
+    overflow-x: hidden;
+    user-select: none;
+  }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #b3e5fc 0%, #4fc3f7 40%, #0288d1 100%);
+    position: relative;
+    padding: 16px;
+    padding-bottom: 40px;
+  }
+  .bubble {
+    position: fixed;
+    bottom: -100px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    animation: rise linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 0.8; }
+    100% { transform: translateY(-110vh) translateX(30px); opacity: 0; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .settings-btn {
+    background: rgba(255,255,255,0.3);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .week {
+    background: rgba(255,255,255,0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 14px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .week-title {
+    font-size: 13px;
+    color: #0d3b5e;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: 500;
+    opacity: 0.8;
+  }
+  .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .day-label {
+    font-size: 11px;
+    color: #0d3b5e;
+    opacity: 0.7;
+  }
+  .day-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 2px solid rgba(255,255,255,0.6);
+  }
+  .day.today .day-icon {
+    background: #fff;
+    border-color: #0288d1;
+    box-shadow: 0 0 0 3px rgba(2,136,209,0.3);
+  }
+  .day.done .day-icon { background: #4caf50; color: #fff; border-color: #2e7d32; }
+  .day.partial .day-icon { background: #ffb74d; color: #fff; border-color: #f57c00; }
+  .day.empty .day-icon { background: rgba(255,255,255,0.4); color: #546e7a; }
+
+  .mascot-wrap {
+    text-align: center;
+    margin: 8px 0 4px;
+    position: relative;
+    height: 140px;
+  }
+  .mascot {
+    width: 140px;
+    height: 140px;
+    transition: transform 0.4s ease;
+  }
+  .mascot.happy { transform: scale(1.08); }
+
+  .counter-card {
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 28px;
+    padding: 24px 20px;
+    text-align: center;
+    margin-bottom: 18px;
+    border: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 8px 32px rgba(2, 136, 209, 0.15);
+  }
+  .counter-value {
+    font-size: 56px;
+    font-weight: 700;
+    color: #01579b;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .counter-unit { font-size: 22px; color: #0277bd; font-weight: 400; }
+  .counter-goal {
+    font-size: 15px;
+    color: #0d3b5e;
+    opacity: 0.75;
+    margin-top: 8px;
+  }
+  .progress {
+    margin-top: 16px;
+    height: 10px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #29b6f6, #0277bd);
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 10px;
+  }
+
+  .quick-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .quick-btn {
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 18px;
+    padding: 18px 8px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #01579b;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+  }
+  .quick-btn:active {
+    transform: scale(0.95);
+    background: rgba(255,255,255,0.75);
+  }
+  .quick-btn small { display: block; font-size: 11px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
+
+  .custom-input {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .custom-input input {
+    flex: 1;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 18px;
+    color: #01579b;
+    outline: none;
+    text-align: center;
+  }
+  .custom-input input::placeholder { color: #01579b; opacity: 0.5; }
+  .custom-input button {
+    background: #0288d1;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 0 20px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .custom-input button:active { background: #0277bd; }
+
+  .reset-btn {
+    display: block;
+    width: 100%;
+    background: rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 14px;
+    color: #0d3b5e;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .reset-btn:active { background: rgba(255,255,255,0.5); }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 20px;
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: #fff;
+    border-radius: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+  }
+  .modal h2 { margin-bottom: 16px; color: #01579b; }
+  .modal label {
+    display: block;
+    font-size: 14px;
+    color: #0d3b5e;
+    margin: 12px 0 6px;
+  }
+  .modal input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #b3e5fc;
+    border-radius: 12px;
+    font-size: 16px;
+    outline: none;
+  }
+  .modal input:focus { border-color: #0288d1; }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-save { background: #0288d1; color: #fff; }
+  .btn-cancel { background: #eceff1; color: #0d3b5e; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top-bar">
+    <div class="title">💧 Водичка</div>
+    <button class="settings-btn" onclick="openSettings()">⚙️</button>
+  </div>
+
+  <div class="week">
+    <div class="week-title">Неделя</div>
+    <div class="days" id="weekDays"></div>
+  </div>
+
+  <div class="mascot-wrap">
+    <svg class="mascot" id="mascot" viewBox="0 0 200 200">
+      <defs>
+        <radialGradient id="dropGrad" cx="35%" cy="30%">
+          <stop offset="0%" stop-color="#e1f5fe"/>
+          <stop offset="60%" stop-color="#4fc3f7"/>
+          <stop offset="100%" stop-color="#0288d1"/>
+        </radialGradient>
+      </defs>
+      <path d="M100 20 C100 20, 40 90, 40 130 C40 165, 65 185, 100 185 C135 185, 160 165, 160 130 C160 90, 100 20, 100 20 Z"
+            fill="url(#dropGrad)" stroke="#01579b" stroke-width="2"/>
+      <ellipse cx="75" cy="90" rx="12" ry="20" fill="#fff" opacity="0.5"/>
+      <g id="eyes">
+        <ellipse cx="80" cy="125" rx="7" ry="9" fill="#0d3b5e"/>
+        <ellipse cx="120" cy="125" rx="7" ry="9" fill="#0d3b5e"/>
+        <circle cx="82" cy="122" r="2.5" fill="#fff"/>
+        <circle cx="122" cy="122" r="2.5" fill="#fff"/>
+      </g>
+      <path id="mouth" d="M85 150 Q100 158 115 150" stroke="#0d3b5e" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g id="cheeks" style="display:none">
+        <circle cx="70" cy="145" r="7" fill="#ff8a80" opacity="0.6"/>
+        <circle cx="130" cy="145" r="7" fill="#ff8a80" opacity="0.6"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="counter-card">
+    <div class="counter-value"><span id="currentAmount">0</span><span class="counter-unit"> мл</span></div>
+    <div class="counter-goal">Цель: <span id="goalAmount">2000</span> мл</div>
+    <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="quick-buttons">
+    <button class="quick-btn" onclick="addWater(100)">100<small>мл · глоток</small></button>
+    <button class="quick-btn" onclick="addWater(200)">200<small>мл · стакан</small></button>
+    <button class="quick-btn" onclick="addWater(400)">400<small>мл · бутылка</small></button>
+  </div>
+
+  <div class="custom-input">
+    <input type="number" id="customAmount" placeholder="Свой объём" inputmode="numeric">
+    <button onclick="addCustom()">+ мл</button>
+  </div>
+
+  <button class="reset-btn" onclick="resetToday()">↺ Сбросить сегодняшний день</button>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <h2>Настройки</h2>
+    <label>Вес (кг)</label>
+    <input type="number" id="weightInput" inputmode="numeric" placeholder="70">
+    <label>Возраст (лет)</label>
+    <input type="number" id="ageInput" inputmode="numeric" placeholder="30">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSettings()">Отмена</button>
+      <button class="btn-save" onclick="saveSettings()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'waterTracker_v1';
+
+  function loadData() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch(e) { return null; }
+  }
+  function saveData(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  let data = loadData();
+  if (!data) {
+    data = {
+      today: todayStr(),
+      amount: 0,
+      weight: 70,
+      age: 30,
+      history: []
+    };
+    saveData(data);
+  }
+
+  const today = todayStr();
+  if (data.today !== today) {
+    data.history.push({
+      date: data.today,
+      amount: data.amount,
+      goal: calcGoal(data.weight, data.age)
+    });
+    data.history = data.history.slice(-7);
+    data.today = today;
+    data.amount = 0;
+    saveData(data);
+  }
+
+  function calcGoal(weight, age) {
+    if (!weight || weight <= 0) return 2000;
+    let base = weight * 30;
+    let factor = 1;
+    if (age >= 55) factor = 0.9;
+    else if (age >= 30) factor = 0.95;
+    return Math.round(base * factor / 50) * 50;
+  }
+
+  function render() {
+    const goal = calcGoal(data.weight, data.age);
+    document.getElementById('currentAmount').textContent = data.amount;
+    document.getElementById('goalAmount').textContent = goal;
+    const pct = Math.min(100, (data.amount / goal) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+
+    const mascot = document.getElementById('mascot');
+    const mouth = document.getElementById('mouth');
+    const cheeks = document.getElementById('cheeks');
+    if (data.amount >= goal && goal > 0) {
+      mascot.classList.add('happy');
+      mouth.setAttribute('d', 'M80 145 Q100 170 120 145');
+      cheeks.style.display = 'block';
+    } else {
+      mascot.classList.remove('happy');
+      mouth.setAttribute('d', 'M85 150 Q100 158 115 150');
+      cheeks.style.display = 'none';
+    }
+
+    renderWeek();
+  }
+
+  function renderWeek() {
+    const container = document.getElementById('weekDays');
+    container.innerHTML = '';
+    const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    const today = new Date();
+
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      days.push({ date: ds, weekday: dayNames[d.getDay()] });
+    }
+
+    days.forEach(day => {
+      let status = 'empty';
+      let icon = '·';
+      if (day.date === data.today) {
+        status = 'today';
+        const goal = calcGoal(data.weight, data.age);
+        if (data.amount >= goal && goal > 0) { icon = '✓'; status += ' done'; }
+        else if (data.amount > 0) { icon = '◔'; status += ' partial'; }
+        else { icon = '○'; }
+      } else {
+        const rec = data.history.find(h => h.date === day.date);
+        if (rec) {
+          if (rec.amount >= rec.goal && rec.goal > 0) { icon = '✓'; status = 'done'; }
+          else if (rec.amount > 0) { icon = '◔'; status = 'partial'; }
+        }
+      }
+      const el = document.createElement('div');
+      el.className = 'day ' + status;
+      el.innerHTML = `<div class="day-label">${day.weekday}</div><div class="day-icon">${icon}</div>`;
+      container.appendChild(el);
+    });
+  }
+
+  function addWater(ml) {
+    data.amount += ml;
+    saveData(data);
+    render();
+    vibrate();
+  }
+  function addCustom() {
+    const input = document.getElementById('customAmount');
+    const val = parseInt(input.value);
+    if (!val || val <= 0) return;
+    addWater(val);
+    input.value = '';
+  }
+  function resetToday() {
+    if (confirm('Сбросить счётчик за сегодня?')) {
+      data.amount = 0;
+      saveData(data);
+      render();
+    }
+  }
+
+  function openSettings() {
+    document.getElementById('weightInput').value = data.weight || '';
+    document.getElementById('ageInput').value = data.age || '';
+    document.getElementById('settingsModal').classList.add('show');
+  }
+  function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('show');
+  }
+  function saveSettings() {
+    const w = parseInt(document.getElementById('weightInput').value);
+    const a = parseInt(document.getElementById('ageInput').value);
+    if (w > 0) data.weight = w;
+    if (a > 0) data.age = a;
+    saveData(data);
+    closeSettings();
+    render();
+  }
+
+  function vibrate() {
+    if (navigator.vibrate) navigator.vibrate(15);
+  }
+
+  function createBubbles() {
+    for (let i = 0; i < 12; i++) {
+      const b = document.createElement('div');
+      b.className = 'bubble';
+      const size = 10 + Math.random() * 40;
+      b.style.width = size + 'px';
+      b.style.height = size + 'px';
+      b.style.left = Math.random() * 100 + '%';
+      b.style.animationDuration = (8 + Math.random() * 10) + 's';
+      b.style.animationDelay = (Math.random() * 10) + 's';
+      document.body.appendChild(b);
+    }
+  }
+
+  createBubbles();
+  render();
+
+  // Регистрация Service Worker для оффлайн-работы
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(err => {
+      console.log('SW registration failed:', err);
+    });
+  }
+</script>
+</body>
+</html>
