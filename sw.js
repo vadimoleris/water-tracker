@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vodichka-v2';
+const CACHE_NAME = 'vodichka-v3';
 const BASE = new URL('./', self.location).href;
 const CORE = ['./', './index.html', './manifest.json']
   .map(p => new URL(p, BASE).href);
