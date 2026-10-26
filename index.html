@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Водичка">
-<link rel="manifest" href="manifest.json?v=4">
+<link rel="manifest" href="manifest.json?v=5">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>💧 Водичка</title>
 <style>
@@ -41,9 +41,9 @@
     z-index: 0;
   }
   @keyframes rise {
-    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    0%   { transform: translate(0, 0); opacity: 0; }
     10%  { opacity: 0.8; }
-    100% { transform: translateY(-110vh) translateX(30px); opacity: 0; }
+    100% { transform: translate(var(--drift, 0px), -110vh); opacity: 0; }
   }
 
   .container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
@@ -395,15 +395,24 @@
   function vibrate() { if (navigator.vibrate) navigator.vibrate(15); }
 
   function createBubbles() {
-    for (let i = 0; i < 12; i++) {
+    const COUNT = 14;
+    const band = 100 / COUNT;
+    for (let i = 0; i < COUNT; i++) {
       const b = document.createElement('div');
       b.className = 'bubble';
       const size = 10 + Math.random() * 40;
+      // Стратификация: своя вертикальная полоса ширины на каждый пузырь,
+      // с джиттером внутри полосы — «лысых» четвертей больше не будет
+      let center = i * band + band * (0.2 + Math.random() * 0.6);
+      center = Math.min(96, Math.max(4, center));
       b.style.width = size + 'px';
       b.style.height = size + 'px';
-      b.style.left = Math.random() * 100 + '%';
+      b.style.left = 'calc(' + center.toFixed(2) + '% - ' + (size / 2) + 'px)';
+      // Симметричный дрейф: теперь ветер дует то влево, то вправо
+      b.style.setProperty('--drift', (Math.random() * 40 - 20).toFixed(0) + 'px');
       b.style.animationDuration = (8 + Math.random() * 10) + 's';
-      b.style.animationDelay = (Math.random() * 10) + 's';
+      // Отрицательная задержка: часть пузырей при загрузке уже в полёте
+      b.style.animationDelay = '-' + (Math.random() * 18).toFixed(1) + 's';
       document.body.appendChild(b);
     }
   }
