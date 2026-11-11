@@ -4,7 +4,7 @@
   "description": "Минималистичный офлайн-трекер выпитой воды",
   "id": "water-tracker",
   "start_url": "./",
-  "scope": "./"
+  "scope": "./",
   "display": "standalone",
   "background_color": "#4fc3f7",
   "theme_color": "#4fc3f7",
