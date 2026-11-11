@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rdf:Description><dc:creator>RealFaviconGenerator</dc:creator><dc:source>https://realfavicongenerator.net</dc:source></rdf:Description></rdf:RDF></metadata><defs>
+    <radialGradient id="dropGrad" cx="35%" cy="30%">
+      <stop offset="0%" stop-color="#e1f5fe"></stop>
+      <stop offset="60%" stop-color="#4fc3f7"></stop>
+      <stop offset="100%" stop-color="#0288d1"></stop>
+    </radialGradient>
+  </defs><rect width="512" height="512" fill="#4fc3f7"></rect><path d="M256 80 C256 80, 128 224, 128 304 C128 376, 184 416, 256 416 C328 416, 384 376, 384 304 C384 224, 256 80, 256 80 Z" fill="url(#dropGrad)" stroke="#01579b" stroke-width="8"></path><ellipse cx="200" cy="220" rx="24" ry="40" fill="#fff" opacity="0.5"></ellipse></svg>
