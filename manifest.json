@@ -2,8 +2,9 @@
   "name": "Водичка — трекер воды",
   "short_name": "Водичка",
   "description": "Минималистичный офлайн-трекер выпитой воды",
+  "id": "./",
   "start_url": "./",
-  "scope": "./",
+  "scope": "./"
   "display": "standalone",
   "background_color": "#4fc3f7",
   "theme_color": "#4fc3f7",
